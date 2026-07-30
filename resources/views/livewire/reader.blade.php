@@ -233,18 +233,6 @@
     </div>
   </div>
 
-  <!-- fallback paste modal -->
-  <div class="cr-modal" x-show="modalOpen" x-cloak @click.self="modalOpen = false" style="display:none">
-    <div class="cr-modal-box">
-      <div style="font-weight:680; font-size:16px;">Paste your content</div>
-      <div style="color:var(--muted); font-size:13px; margin:4px 0 12px;">Click the box and press ⌘V / Ctrl+V, then Add.</div>
-      <textarea x-model="modalText" x-ref="modalArea" placeholder="Paste here…"></textarea>
-      <div class="cr-modal-actions">
-        <button class="cr-btn" @click="modalOpen = false">Cancel</button>
-        <button class="cr-btn primary" @click="submitModal()">Add</button>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
@@ -252,8 +240,6 @@
     Alpine.data('readerUI', () => ({
     dark: (localStorage.getItem('cr-theme') || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')) === 'dark',
     sideHidden: false,
-    modalOpen: false,
-    modalText: '',
     newProjectOpen: false,
     newProjectName: '',
     renameOpen: false,
@@ -280,19 +266,16 @@
     doPaste() {
       if (navigator.clipboard && navigator.clipboard.readText) {
         navigator.clipboard.readText()
-          .then(t => { if (t && t.trim()) this.$wire.paste(t); else this.openModal(); })
-          .catch(() => this.openModal());
-      } else {
-        this.openModal();
+          .then(t => { if (t && t.trim()) this.$wire.paste(t); })
+          .catch(() => {});
       }
     },
     onGlobalPaste(e) {
-      if (this.modalOpen) return;
+      const tag = (e.target && e.target.tagName) || '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return; // don't hijack typing in modals
       const t = (e.clipboardData || window.clipboardData).getData('text');
       if (t && t.trim()) { e.preventDefault(); this.$wire.paste(t); }
     },
-    openModal() { this.modalText = ''; this.modalOpen = true; this.$nextTick(() => this.$refs.modalArea && this.$refs.modalArea.focus()); },
-    submitModal() { if (this.modalText.trim()) this.$wire.paste(this.modalText); this.modalOpen = false; },
 
     openNewProject() { this.newProjectName = ''; this.newProjectOpen = true; this.$nextTick(() => this.$refs.newProjectInput && this.$refs.newProjectInput.focus()); },
     submitNewProject() { this.$wire.addProject(this.newProjectName.trim()); this.newProjectOpen = false; },
